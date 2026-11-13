@@ -1,0 +1,6 @@
+{
+  "name": "CineBase",
+  "description": "Netflix-inspired Moviebase tracker for movies and series with watched history, watchlist, episode progress, ratings, custom lists, and taste-adaptive recommendations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

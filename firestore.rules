@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidMediaEntry(data, uid) {
+      return data.userId is string && data.userId == uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             data.originalTitle is string && data.originalTitle.size() <= 150 &&
+             data.overview is string && data.overview.size() <= 600 &&
+             data.type in ['MOVIE', 'SERIES'] &&
+             data.releaseYear is int && data.releaseYear >= 1900 && data.releaseYear <= 2100 &&
+             data.genresCsv is string && data.genresCsv.size() <= 200 &&
+             data.moodTagsCsv is string && data.moodTagsCsv.size() <= 200 &&
+             data.directorOrCreator is string && data.directorOrCreator.size() <= 120 &&
+             data.runtimeMinutes is int && data.runtimeMinutes >= 1 && data.runtimeMinutes <= 1000 &&
+             data.totalSeasons is int && data.totalSeasons >= 1 && data.totalSeasons <= 100 &&
+             data.seasonEpisodeCountsCsv is string && data.seasonEpisodeCountsCsv.size() >= 1 && data.seasonEpisodeCountsCsv.size() <= 300 &&
+             data.currentSeason is int && data.currentSeason >= 1 && data.currentSeason <= 100 &&
+             data.currentEpisode is int && data.currentEpisode >= 0 && data.currentEpisode <= 500 &&
+             data.watchedEpisodesCount is int && data.watchedEpisodesCount >= 0 && data.watchedEpisodesCount <= 5000 &&
+             data.totalEpisodesCount is int && data.totalEpisodesCount >= 1 && data.totalEpisodesCount <= 5000 &&
+             data.status in ['NONE', 'WATCHLIST', 'WATCHING', 'WATCHED'] &&
+             (!('userRating' in data) || data.userRating == null || (data.userRating is int && data.userRating >= 1 && data.userRating <= 10)) &&
+             data.userNotes is string && data.userNotes.size() <= 500 &&
+             (data.communityScore is float || data.communityScore is int) && data.communityScore >= 0 && data.communityScore <= 10 &&
+             data.posterStyle in ['SCIFI', 'NOIR', 'DRAMA', 'ACTION', 'MYSTERY', 'ANIMATION', 'COMEDY', 'MOROCCAN'] &&
+             data.isFeatured is bool &&
+             data.isCustom is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCustomList(data, uid) {
+      return data.userId is string && data.userId == uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.description is string && data.description.size() <= 240 &&
+             data.accentColorKey in ['crimson', 'gold', 'emerald', 'cobalt'] &&
+             data.mediaIds is list && data.mediaIds.size() <= 100 &&
+             (data.mediaIds.size() == 0 || data.mediaIds[0] is string) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/media_entries/{mediaId} {
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(mediaId);
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(mediaId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'title', 'originalTitle', 'overview', 'type',
+                         'releaseYear', 'genresCsv', 'moodTagsCsv', 'directorOrCreator',
+                         'runtimeMinutes', 'totalSeasons', 'seasonEpisodeCountsCsv',
+                         'currentSeason', 'currentEpisode', 'watchedEpisodesCount',
+                         'totalEpisodesCount', 'status', 'userNotes', 'communityScore',
+                         'posterStyle', 'isFeatured', 'isCustom', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'title', 'originalTitle', 'overview', 'type',
+                         'releaseYear', 'genresCsv', 'moodTagsCsv', 'directorOrCreator',
+                         'runtimeMinutes', 'totalSeasons', 'seasonEpisodeCountsCsv',
+                         'currentSeason', 'currentEpisode', 'watchedEpisodesCount',
+                         'totalEpisodesCount', 'status', 'userRating', 'userNotes',
+                         'communityScore', 'posterStyle', 'isFeatured', 'isCustom',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidMediaEntry(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(mediaId) &&
+                       isValidMediaEntry(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().isCustom == existing().isCustom &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'currentSeason', 'currentEpisode', 'watchedEpisodesCount',
+                           'status', 'userRating', 'userNotes', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(mediaId);
+    }
+
+    match /users/{userId}/custom_lists/{listId} {
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(listId);
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(listId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'name', 'description', 'accentColorKey',
+                         'mediaIds', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'name', 'description', 'accentColorKey',
+                         'mediaIds', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidCustomList(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(listId) &&
+                       isValidCustomList(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'description', 'accentColorKey', 'mediaIds', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(listId);
+    }
+  }
+}

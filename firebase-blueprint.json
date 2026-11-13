@@ -1,0 +1,203 @@
+{
+  "entities": {
+    "MediaEntry": {
+      "title": "MediaEntry",
+      "description": "A user's tracked movie or TV series entry including watch status, episode progress, personal rating, and notes.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the movie or series."
+        },
+        "originalTitle": {
+          "type": "string",
+          "description": "Original title of the work."
+        },
+        "overview": {
+          "type": "string",
+          "description": "Short synopsis of the work."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["MOVIE", "SERIES"],
+          "description": "Whether the work is a movie or series."
+        },
+        "releaseYear": {
+          "type": "integer",
+          "description": "Release year."
+        },
+        "genresCsv": {
+          "type": "string",
+          "description": "Comma-separated genres."
+        },
+        "moodTagsCsv": {
+          "type": "string",
+          "description": "Comma-separated mood tags."
+        },
+        "directorOrCreator": {
+          "type": "string",
+          "description": "Director or creator name."
+        },
+        "runtimeMinutes": {
+          "type": "integer",
+          "description": "Runtime in minutes."
+        },
+        "totalSeasons": {
+          "type": "integer",
+          "description": "Total number of seasons."
+        },
+        "seasonEpisodeCountsCsv": {
+          "type": "string",
+          "description": "Comma-separated episode counts per season."
+        },
+        "currentSeason": {
+          "type": "integer",
+          "description": "Current season number."
+        },
+        "currentEpisode": {
+          "type": "integer",
+          "description": "Current episode number within currentSeason."
+        },
+        "watchedEpisodesCount": {
+          "type": "integer",
+          "description": "Total watched episodes across seasons."
+        },
+        "totalEpisodesCount": {
+          "type": "integer",
+          "description": "Total episodes across all seasons."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["NONE", "WATCHLIST", "WATCHING", "WATCHED"],
+          "description": "Current watch status."
+        },
+        "userRating": {
+          "type": "integer",
+          "description": "Optional user rating from 1 to 10."
+        },
+        "userNotes": {
+          "type": "string",
+          "description": "Personal user notes."
+        },
+        "communityScore": {
+          "type": "number",
+          "description": "Baseline community score."
+        },
+        "posterStyle": {
+          "type": "string",
+          "enum": ["SCIFI", "NOIR", "DRAMA", "ACTION", "MYSTERY", "ANIMATION", "COMEDY", "MOROCCAN"],
+          "description": "Poster artwork theme."
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Whether this work is featured."
+        },
+        "isCustom": {
+          "type": "boolean",
+          "description": "Whether this work was custom added by the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "originalTitle",
+        "overview",
+        "type",
+        "releaseYear",
+        "genresCsv",
+        "moodTagsCsv",
+        "directorOrCreator",
+        "runtimeMinutes",
+        "totalSeasons",
+        "seasonEpisodeCountsCsv",
+        "currentSeason",
+        "currentEpisode",
+        "watchedEpisodesCount",
+        "totalEpisodesCount",
+        "status",
+        "userNotes",
+        "communityScore",
+        "posterStyle",
+        "isFeatured",
+        "isCustom",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CustomList": {
+      "title": "CustomList",
+      "description": "A user-curated custom list containing movie/series IDs.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the owner."
+        },
+        "name": {
+          "type": "string",
+          "description": "List name."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional list description."
+        },
+        "accentColorKey": {
+          "type": "string",
+          "enum": ["crimson", "gold", "emerald", "cobalt"],
+          "description": "List accent color token."
+        },
+        "mediaIds": {
+          "type": "array",
+          "description": "Bounded list of media IDs belonging to this custom list."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "description",
+        "accentColorKey",
+        "mediaIds",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/media_entries/{mediaId}": {
+      "schema": {
+        "$ref": "#/entities/MediaEntry"
+      },
+      "description": "User-scoped movie and series tracking entries."
+    },
+    "/users/{userId}/custom_lists/{listId}": {
+      "schema": {
+        "$ref": "#/entities/CustomList"
+      },
+      "description": "User-scoped custom lists of movies and series."
+    }
+  }
+}
